@@ -12,13 +12,13 @@ const (
 )
 
 // MigrateFunc is the func signature for migratinx.
-type MigrateFunc func(*xorm.Session) error
+type MigrateFunc func(*xorm.Engine) error
 
 // RollbackFunc is the func signature for rollbackinx.
-type RollbackFunc func(*xorm.Session) error
+type RollbackFunc func(*xorm.Engine) error
 
 // InitSchemaFunc is the func signature for initializing the schema.
-type InitSchemaFunc func(*xorm.Session) error
+type InitSchemaFunc func(*xorm.Engine) error
 
 // Migration represents a database migration (a modification to be made on the database).
 type Migration struct {
@@ -33,7 +33,6 @@ type Migration struct {
 // Xormigrate represents a collection of all migrations of a database schema.
 type Xormigrate struct {
 	db         *xorm.Engine
-	tx         *xorm.Session
 	migrations []*Migration
 	initSchema InitSchemaFunc
 }
@@ -129,22 +128,15 @@ func (x *Xormigrate) migrate(migrationID string) error {
 		return err
 	}
 
-	tx := x.db.NewSession()
-	if err := tx.Begin(); err != nil {
-		// if returned then will rollback automatically
-		return err
-	}
-	defer tx.Close()
-
 	if x.initSchema != nil && x.canInitializeSchema() {
-		if err := x.runInitSchema(tx); err != nil {
+		if err := x.runInitSchema(); err != nil {
 			return err
 		}
-		return tx.Commit()
+		return nil
 	}
 
 	for _, migration := range x.migrations {
-		if err := x.runMigration(tx, migration); err != nil {
+		if err := x.runMigration(migration); err != nil {
 			return err
 		}
 		if migrationID != "" && migration.ID == migrationID {
@@ -152,7 +144,7 @@ func (x *Xormigrate) migrate(migrationID string) error {
 		}
 	}
 
-	return tx.Commit()
+	return nil
 }
 
 // There are migrations to apply if either there's a defined
@@ -220,26 +212,19 @@ func (x *Xormigrate) RollbackTo(migrationID string) error {
 		return err
 	}
 
-	tx := x.db.NewSession()
-	if err := tx.Begin(); err != nil {
-		// if returned then will rollback automatically
-		return err
-	}
-	defer tx.Close()
-
 	for i := len(x.migrations) - 1; i >= 0; i-- {
 		migration := x.migrations[i]
 		if migration.ID == migrationID {
 			break
 		}
 		if x.migrationDidRun(migration) {
-			if err := x.rollbackMigration(tx, migration); err != nil {
+			if err := x.rollbackMigration(migration); err != nil {
 				return err
 			}
 		}
 	}
 
-	return tx.Commit()
+	return nil
 }
 
 func (x *Xormigrate) getLastRunMigration() (*Migration, error) {
@@ -254,24 +239,18 @@ func (x *Xormigrate) getLastRunMigration() (*Migration, error) {
 
 // RollbackMigration undo a migration.
 func (x *Xormigrate) RollbackMigration(m *Migration) error {
-	tx := x.db.NewSession()
-	if err := tx.Begin(); err != nil {
-		// if returned then will rollback automatically
+	if err := x.rollbackMigration(m); err != nil {
 		return err
 	}
-	defer tx.Close()
-	if err := x.rollbackMigration(tx, m); err != nil {
-		return err
-	}
-	return tx.Commit()
+	return nil
 }
 
-func (x *Xormigrate) rollbackMigration(tx *xorm.Session, m *Migration) error {
+func (x *Xormigrate) rollbackMigration(m *Migration) error {
 	if m.Rollback == nil {
 		return ErrRollbackImpossible
 	}
 
-	if err := m.Rollback(tx); err != nil {
+	if err := m.Rollback(x.db); err != nil {
 		return err
 	}
 	if _, err := x.db.In("id", m.ID).Delete(&Migration{}); err != nil {
@@ -280,8 +259,8 @@ func (x *Xormigrate) rollbackMigration(tx *xorm.Session, m *Migration) error {
 	return nil
 }
 
-func (x *Xormigrate) runInitSchema(tx *xorm.Session) error {
-	if err := x.initSchema(tx); err != nil {
+func (x *Xormigrate) runInitSchema() error {
+	if err := x.initSchema(x.db); err != nil {
 		return err
 	}
 	if err := x.insertMigration(initSchemaMigrationId); err != nil {
@@ -297,13 +276,13 @@ func (x *Xormigrate) runInitSchema(tx *xorm.Session) error {
 	return nil
 }
 
-func (x *Xormigrate) runMigration(tx *xorm.Session, migration *Migration) error {
+func (x *Xormigrate) runMigration(migration *Migration) error {
 	if len(migration.ID) == 0 {
 		return ErrMissingID
 	}
 
 	if !x.migrationDidRun(migration) {
-		if err := migration.Migrate(tx); err != nil {
+		if err := migration.Migrate(x.db); err != nil {
 			return err
 		}
 
