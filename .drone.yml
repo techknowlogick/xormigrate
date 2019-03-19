@@ -12,15 +12,16 @@ steps:
     GO111MODULE: on
   commands:
     - go get ./...
-    - go test -v -tags postgresql
     - go test -v -tags sqlite
     - go test -v -tags mysql
+    - go test -v -tags postgresql
 
 services:
 - name: pgsql
   image: postgres:9.5
   environment:
     POSTGRES_DB: test
+    POSTGRES_PASSWORD: postgres
 
 - name: mysql
   image: mysql:5.7
