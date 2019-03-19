@@ -1,5 +1,7 @@
 # Xormigrate
 [![Build Status](https://cloud.drone.io/api/badges/techknowlogick/xormigrate/status.svg)](https://cloud.drone.io/techknowlogick/xormigrate)
+[![Go Report Card](https://goreportcard.com/badge/src.techknowlogick.com/xormigrate)](https://goreportcard.com/report/src.techknowlogick.com/xormigrate)
+[![GoDoc](https://godoc.org/src.techknowlogick.com/xormigrate?status.svg)](https://godoc.org/src.techknowlogick.com/xormigrate)
 
 ## Supported databases
 
