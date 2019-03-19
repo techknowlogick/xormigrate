@@ -130,8 +130,9 @@ m.InitSchema(func(tx *xorm.Engine) error {
 ```
 
 ## Credits
-Based on [Gormigrate][gormmigrate]
-Uses [Xorm][xorm]
+
+* Based on [Gormigrate][gormmigrate]
+* Uses [Xorm][xorm]
 
 [xorm]: http://github.com/go-xorm/xorm/
 [gormmigrate]: https://github.com/go-gormigrate/gormigrate
