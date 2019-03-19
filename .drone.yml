@@ -15,6 +15,7 @@ steps:
     - go test -v -tags sqlite
     - go test -v -tags mysql
     - go test -v -tags postgresql
+    - go test -v -tags sqlserver
 
 services:
 - name: pgsql
@@ -28,3 +29,10 @@ services:
   environment:
     MYSQL_DATABASE: test
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
+
+- name: mssql
+  image: microsoft/mssql-server-linux:latest
+  environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=MwantsaSecurePassword1
+    - MSSQL_PID=Standard
