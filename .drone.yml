@@ -6,12 +6,15 @@ workspace:
   path: src/src.techknowlogick.com/xormigrate
 
 steps:
-- name: build-go
+- name: fetch-and-test
   image: golang:1.12
   environment:
     GO111MODULE: on
   commands:
     - go get ./...
+    - go test -v -tags postgresql
+    - go test -v -tags sqlite
+    - go test -v -tags mysql
 
 services:
 - name: pgsql
@@ -24,10 +27,3 @@ services:
   environment:
     MYSQL_DATABASE: test
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
-
-- name: mssql
-  image: microsoft/mssql-server-linux:latest
-  environment:
-    ACCEPT_EULA: Y
-    SA_PASSWORD: MwantsaSecurePassword1
-    MSSQL_PID: Standard
