@@ -96,11 +96,7 @@ func (x *Xormigrate) Migrate() error {
 	if !x.hasMigrations() {
 		return ErrNoMigrationDefined
 	}
-	var targetMigrationID string
-	if len(x.migrations) > 0 {
-		targetMigrationID = x.migrations[len(x.migrations)-1].ID
-	}
-	return x.migrate(targetMigrationID)
+	return x.migrate("")
 }
 
 // MigrateTo executes all migrations that did not run yet up to the migration that matches `migrationID`.
