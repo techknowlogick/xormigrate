@@ -114,7 +114,7 @@ type Pet struct {
 }
 
 m := xormigrate.New(db, []*xormigrate.Migration{
-    // you migrations here
+    // your migrations here
 })
 
 m.InitSchema(func(tx *xorm.Engine) error {
