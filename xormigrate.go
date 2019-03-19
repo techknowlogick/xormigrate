@@ -129,10 +129,7 @@ func (x *Xormigrate) migrate(migrationID string) error {
 	}
 
 	if x.initSchema != nil && x.canInitializeSchema() {
-		if err := x.runInitSchema(); err != nil {
-			return err
-		}
-		return nil
+		return x.runInitSchema() // return error or nil
 	}
 
 	for _, migration := range x.migrations {
@@ -195,10 +192,7 @@ func (x *Xormigrate) RollbackLast() error {
 		return err
 	}
 
-	if err := x.RollbackMigration(lastRunMigration); err != nil {
-		return err
-	}
-	return nil
+	return x.RollbackMigration(lastRunMigration) // return error or nil
 }
 
 // RollbackTo undoes migrations up to the given migration that matches the `migrationID`.
@@ -239,10 +233,7 @@ func (x *Xormigrate) getLastRunMigration() (*Migration, error) {
 
 // RollbackMigration undo a migration.
 func (x *Xormigrate) RollbackMigration(m *Migration) error {
-	if err := x.rollbackMigration(m); err != nil {
-		return err
-	}
-	return nil
+	return x.rollbackMigration(m) // return error or nil
 }
 
 func (x *Xormigrate) rollbackMigration(m *Migration) error {

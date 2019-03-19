@@ -151,10 +151,7 @@ func TestInitSchemaNoMigrations(t *testing.T) {
 			if err := tx.Sync2(&Person{}); err != nil {
 				return err
 			}
-			if err := tx.Sync2(&Pet{}); err != nil {
-				return err
-			}
-			return nil
+			return tx.Sync2(&Pet{}) // return error or nil
 		})
 
 		assert.NoError(t, m.Migrate())
@@ -171,10 +168,7 @@ func TestInitSchemaWithMigrations(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		m := New(db, migrations)
 		m.InitSchema(func(tx *xorm.Engine) error {
-			if err := tx.Sync2(&Person{}); err != nil {
-				return err
-			}
-			return nil
+			return tx.Sync2(&Person{}) // return error or nil
 		})
 
 		assert.NoError(t, m.Migrate())
@@ -205,10 +199,7 @@ func TestInitSchemaAlreadyInitialised(t *testing.T) {
 		// Then migrate again, this time with a non empty initialisation
 		// This second initialisation should not happen!
 		m.InitSchema(func(tx *xorm.Engine) error {
-			if err := tx.Sync2(&Car{}); err != nil {
-				return err
-			}
-			return nil
+			return tx.Sync2(&Car{}) // return error or nil
 		})
 		assert.NoError(t, m.Migrate())
 
@@ -235,10 +226,7 @@ func TestInitSchemaExistingMigrations(t *testing.T) {
 		// Then migrate again, this time with a non empty initialisation
 		// This initialisation should not happen!
 		m.InitSchema(func(tx *xorm.Engine) error {
-			if err := tx.Sync2(&Car{}); err != nil {
-				return err
-			}
-			return nil
+			return tx.Sync2(&Car{}) // return error or nil
 		})
 		assert.NoError(t, m.Migrate())
 
