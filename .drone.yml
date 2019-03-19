@@ -17,17 +17,17 @@ services:
 - name: pgsql
   image: postgres:9.5
   environment:
-    - POSTGRES_DB=test
+    POSTGRES_DB: test
 
 - name: mysql
   image: mysql:5.7
   environment:
-    - MYSQL_DATABASE=test
-    - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    MYSQL_DATABASE: test
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
 
 - name: mssql
   image: microsoft/mssql-server-linux:latest
   environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=MwantsaSecurePassword1
-    - MSSQL_PID=Standard
+    ACCEPT_EULA: Y
+    SA_PASSWORD: MwantsaSecurePassword1
+    MSSQL_PID: Standard
