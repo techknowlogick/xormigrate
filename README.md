@@ -1,4 +1,5 @@
 # Xormigrate
+[![Build Status](https://cloud.drone.io/api/badges/techknowlogick/xormigrate/status.svg)](https://cloud.drone.io/techknowlogick/xormigrate)
 
 ## Supported databases
 
