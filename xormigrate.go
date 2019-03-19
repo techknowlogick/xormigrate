@@ -93,9 +93,6 @@ func (x *Xormigrate) InitSchema(initSchema InitSchemaFunc) {
 
 // Migrate executes all migrations that did not run yet.
 func (x *Xormigrate) Migrate() error {
-	if !x.hasMigrations() {
-		return ErrNoMigrationDefined
-	}
 	return x.migrate("")
 }
 
