@@ -347,7 +347,7 @@ func forEachDatabase(t *testing.T, fn func(database *xorm.Engine)) {
 		defer db.Close()
 
 		// ensure tables do not exists
-		assert.NoError(t, db.DropTables(&Migration{},&Person{}, &Pet{}, &Book{}))
+		assert.NoError(t, db.DropTables(&Migration{}, &Person{}, &Pet{}, &Book{}))
 
 		fn(db)
 	}
