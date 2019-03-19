@@ -64,7 +64,7 @@ func main() {
 			},
 			Rollback: func(tx *xorm.Engine) error {
 				// Note: Column dropping in sqlite is not support, and you will need to do this manually
-				_, err = sess.Exec("ALTER TABLE person DROP COLUMN age")
+				_, err = tx.Exec("ALTER TABLE person DROP COLUMN age")
 				if err != nil {
 					return fmt.Errorf("Drop column failed: %v", err)
 				}
