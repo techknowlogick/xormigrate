@@ -337,7 +337,7 @@ func tableCount(t *testing.T, db *xorm.Engine) (count int64) {
 
 func forEachDatabase(t *testing.T, fn func(database *xorm.Engine)) {
 	if len(databases) == 0 {
-		panic("No database choosen for testing!")
+		panic("No database chosen for testing!")
 	}
 
 	for _, database := range databases {
