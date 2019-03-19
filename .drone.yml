@@ -33,6 +33,6 @@ services:
 - name: mssql
   image: microsoft/mssql-server-linux:latest
   environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=MwantsaSecurePassword1
-    - MSSQL_PID=Standard
+    ACCEPT_EULA: Y
+    SA_PASSWORD: MwantsaSecurePassword1
+    MSSQL_PID: Standard
