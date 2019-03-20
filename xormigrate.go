@@ -24,6 +24,8 @@ type InitSchemaFunc func(*xorm.Engine) error
 type Migration struct {
 	// ID is the migration identifier. Usually a timestamp like "201601021504".
 	ID string `xorm:"id"`
+	// Desc is the migration description, which is optionally printed out when the migration is ran.
+	Desc string
 	// Migrate is a function that will br executed while running this migration.
 	Migrate MigrateFunc `xorm:"-"`
 	// Rollback will be executed on rollback. Can be nil.
@@ -266,6 +268,9 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 	}
 
 	if !x.migrationDidRun(migration) {
+		if len(migration.Desc) > 0 {
+			logger.Println(migration.Desc)
+		}
 		if err := migration.Migrate(x.db); err != nil {
 			return err
 		}
