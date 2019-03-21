@@ -18,8 +18,8 @@ type database struct {
 
 var migrations = []*Migration{
 	{
-		ID:   "201608301400",
-		Desc: "Add Person",
+		ID:          "201608301400",
+		Description: "Add Person",
 		Migrate: func(tx *xorm.Engine) error {
 			return tx.Sync2(&Person{})
 		},
@@ -66,7 +66,6 @@ type Book struct {
 func TestMigration(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		m := New(db, migrations)
-		m.SetLogger(nil)
 
 		err := m.Migrate()
 		assert.NoError(t, err)
