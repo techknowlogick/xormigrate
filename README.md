@@ -43,7 +43,7 @@ func main() {
 		{
 			ID: "201608301400",
 			// An optional description to print out to the Xormigrate logger
-			Desc: "Create the Person table",
+			Description: "Create the Person table",
 			Migrate: func(tx *xorm.Engine) error {
 				// it's a good pratice to copy the struct inside the function,
 				// so side effects are prevented if the original struct changes during the time
