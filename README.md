@@ -42,6 +42,8 @@ func main() {
 		// create persons table
 		{
 			ID: "201608301400",
+			// An optional description to print out to the Xormigrate logger
+			Description: "Create the Person table",
 			Migrate: func(tx *xorm.Engine) error {
 				// it's a good pratice to copy the struct inside the function,
 				// so side effects are prevented if the original struct changes during the time
@@ -130,6 +132,25 @@ m.InitSchema(func(tx *xorm.Engine) error {
 	}
 	return nil
 })
+```
+
+## Adding migration descriptions to your logging
+Xormigrate's logger defaults to stdout, but it can be changed to suit your needs.  
+```go
+m := xormigrate.New(db, []*xormigrate.Migration{
+    // your migrations here
+})
+
+// Don't log anything
+m.NilLogger() 
+
+// This is the default logger
+// No need to initialize this unless it was changed
+// [xormigrate] message
+m.DefaultLogger()
+
+// Or, create a logger with any io.Writer you want
+m.NewLogger(os.Stdout)
 ```
 
 ## Credits

@@ -18,7 +18,8 @@ type database struct {
 
 var migrations = []*Migration{
 	{
-		ID: "201608301400",
+		ID:          "201608301400",
+		Description: "Add Person",
 		Migrate: func(tx *xorm.Engine) error {
 			return tx.Sync2(&Person{})
 		},
