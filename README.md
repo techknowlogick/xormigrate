@@ -142,14 +142,15 @@ m := xormigrate.New(db, []*xormigrate.Migration{
 })
 
 // Don't log anything
-m.SetLogger(m.NilLogger()) 
+m.NilLogger() 
 
-// This is the default logging format
+// This is the default logger
+// No need to initialize this unless it was changed
 // [xormigrate] message
-m.SetLogger(m.DefaultLogger())
+m.DefaultLogger()
 
-// Or, pass in any io.Writer you want
-m.SetLogger(m.NewLogger(os.Stdout))
+// Or, create a logger with any io.Writer you want
+m.NewLogger(os.Stdout)
 ```
 
 ## Credits

@@ -27,11 +27,6 @@ func (x *Xormigrate) SetLogger(l LoggerInterface) {
 	logger = l
 }
 
-// NewLogger returns a Xormigrate logger with a specified io.Writer
-func NewLogger(writer io.Writer) *XormigrateLogger {
-	return &XormigrateLogger{log.New(writer, "", 0)}
-}
-
 func defaultLogger() *XormigrateLogger {
 	return &XormigrateLogger{log.New(os.Stdout, "[xormigrate] ", 0)}
 }
@@ -45,6 +40,11 @@ func (x *Xormigrate) DefaultLogger() {
 // NilLogger sets a Xormigrate logger that discards all messages
 func (x *Xormigrate) NilLogger() {
 	x.SetLogger(&XormigrateLogger{log.New(ioutil.Discard, "", 0)})
+}
+
+// NewLogger sets a Xormigrate logger with a specified io.Writer
+func (x *Xormigrate) NewLogger(writer io.Writer) {
+	x.SetLogger(&XormigrateLogger{log.New(writer, "", 0)})
 }
 
 type XormigrateLogger struct {
