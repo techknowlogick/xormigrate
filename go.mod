@@ -3,7 +3,6 @@ module src.techknowlogick.com/xormigrate
 go 1.12
 
 require (
-	cloud.google.com/go v0.37.4 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20190423194141-731ef375ac02
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/builder v0.3.4 // indirect
@@ -12,7 +11,7 @@ require (
 	github.com/lib/pq v1.1.0
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/stretchr/testify v1.3.0
-	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c // indirect
+	golang.org/x/crypto v0.0.0-20190428033426-a29dc8fdc734 // indirect
 	google.golang.org/appengine v1.5.0 // indirect
 )
 
