@@ -3,7 +3,7 @@ module src.techknowlogick.com/xormigrate
 go 1.12
 
 require (
-	cloud.google.com/go v0.37.2 // indirect
+	cloud.google.com/go v0.37.4 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20190423194141-731ef375ac02
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/builder v0.3.4 // indirect
