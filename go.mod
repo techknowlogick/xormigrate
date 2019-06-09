@@ -11,8 +11,7 @@ require (
 	github.com/lib/pq v1.1.0
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/stretchr/testify v1.3.0
-	golang.org/x/crypto v0.0.0-20190428033426-a29dc8fdc734 // indirect
-	google.golang.org/appengine v1.5.0 // indirect
+	google.golang.org/appengine v1.6.1 // indirect
 )
 
 replace github.com/go-xorm/xorm => github.com/go-xorm/xorm v0.7.2-0.20190330194841-617e0ae295d7fd8a4ea48f6c782781f6cc367c7e
