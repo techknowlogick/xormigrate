@@ -19,7 +19,7 @@ steps:
 
 services:
 - name: pgsql
-  image: postgres:9.5
+  image: postgres:9.6
   environment:
     POSTGRES_DB: test
     POSTGRES_PASSWORD: postgres
