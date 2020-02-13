@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-xorm/xorm"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/stretchr/testify/assert"
+	"xorm.io/xorm"
 )
 
 var databases []database
