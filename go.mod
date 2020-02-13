@@ -7,7 +7,7 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.3.0
-	github.com/mattn/go-sqlite3 v2.0.2+incompatible
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/stretchr/testify v1.4.0
 	google.golang.org/appengine v1.6.1 // indirect
 	xorm.io/core v0.7.3 // indirect
