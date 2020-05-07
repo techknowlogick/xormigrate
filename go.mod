@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/joho/godotenv v1.3.0
-	github.com/lib/pq v1.3.0
+	github.com/lib/pq v1.5.2
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5 // indirect
