@@ -129,7 +129,7 @@ func (x *Xormigrate) migrate(migrationID string) error {
 
 	for _, migration := range x.migrations {
 		if err := x.runMigration(migration); err != nil {
-			return err
+			return fmt.Errorf("migration %s failed: %s", migration.ID, err.Error())
 		}
 		if migrationID != "" && migration.ID == migrationID {
 			break
