@@ -11,6 +11,7 @@ It supports any of the databases Xorm supports:
 - MySQL
 - SQLite
 - Microsoft SQL Server
+- [Full list of supported drivers...](https://gitea.com/xorm/xorm#drivers-support)
 
 ## Installing
 
