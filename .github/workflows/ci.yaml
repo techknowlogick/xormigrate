@@ -13,9 +13,10 @@ jobs:
   test:
     strategy:
       matrix:
+        # lowest and highest versions of go that are supported by the project
+        # highest should be the latest version of go
         go-version: [ 1.16.x, 1.21.x ]
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     services:
       pgsql:
         image: postgres:12
