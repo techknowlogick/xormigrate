@@ -318,6 +318,43 @@ func TestEmptyMigrationList(t *testing.T) {
 	})
 }
 
+func TestAllowLong(t *testing.T) {
+	forEachDatabase(t, func(db *xorm.Engine) {
+		t.Run("without AllowLong", func(t *testing.T) {
+			m := New(db, []*Migration{{
+				ID:   "201608301430",
+				Long: true,
+				Migrate: func(tx *xorm.Engine) error {
+					return tx.Sync2(&Pet{})
+				},
+				Rollback: func(tx *xorm.Engine) error {
+					return tx.DropTables(&Pet{})
+				},
+			}})
+			err := m.Migrate()
+			assert.Nil(t, err)
+			assert.Equal(t, int64(0), tableCount(t, db))
+		})
+
+		t.Run("with AllowLong", func(t *testing.T) {
+			m := New(db, []*Migration{{
+				ID:   "201608301430",
+				Long: true,
+				Migrate: func(tx *xorm.Engine) error {
+					return tx.Sync2(&Pet{})
+				},
+				Rollback: func(tx *xorm.Engine) error {
+					return tx.DropTables(&Pet{})
+				},
+			}})
+			m.AllowLong(true)
+			err := m.Migrate()
+			assert.Nil(t, err)
+			assert.Equal(t, int64(1), tableCount(t, db))
+		})
+	})
+}
+
 func tableCount(t *testing.T, db *xorm.Engine) (count int64) {
 	count, err := db.Count(&Migration{})
 	assert.NoError(t, err)
