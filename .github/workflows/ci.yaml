@@ -1,0 +1,66 @@
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+  workflow_dispatch:
+
+name: ci
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        # lowest and highest versions of go that are supported by the project
+        # highest should be the latest version of go
+        go-version: [ 1.16.x, 1.21.x ]
+    runs-on: ubuntu-latest
+    services:
+      pgsql:
+        image: postgres:12
+        env:
+          POSTGRES_DB: test
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - "5432:5432"
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: test
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        ports:
+          - "3306:3306"
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2017-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_PID: Standard
+          SA_PASSWORD: MwantsaSecurePassword1
+        ports:
+          - "1433:1433"
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Add hosts to /etc/hosts
+        run: '[ -e "/.dockerenv" ] || [ -e "/run/.containerenv" ] || echo "127.0.0.1 pgsql mysql mssql" | sudo tee -a /etc/hosts'
+      - name: check fmt
+        run: if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
+      - name: Test
+        run: |
+          go test -v -tags sqlite
+          go test -v -tags mysql
+          go test -v -tags postgresql
+          go test -v -tags sqlserver
