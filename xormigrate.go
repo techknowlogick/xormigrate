@@ -39,7 +39,7 @@ type Xormigrate struct {
 	db         *xorm.Engine
 	migrations []*Migration
 	initSchema InitSchemaFunc
-	allowLong bool
+	allowLong  bool
 }
 
 // ReservedIDError is returned when a migration is using a reserved ID
@@ -85,7 +85,7 @@ func New(db *xorm.Engine, migrations []*Migration) *Xormigrate {
 	return &Xormigrate{
 		db:         db,
 		migrations: migrations,
-		allowLong: false,
+		allowLong:  false,
 	}
 }
 
