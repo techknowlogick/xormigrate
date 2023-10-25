@@ -30,6 +30,8 @@ type Migration struct {
 	Migrate MigrateFunc `xorm:"-"`
 	// Rollback will be executed on rollback. Can be nil.
 	Rollback RollbackFunc `xorm:"-"`
+	// Long marks the migration an non-required migration that will likely take a long time. Must use Xormigrate.AllowLong() to be enabled.
+	Long bool `xorm:"-"`
 }
 
 // Xormigrate represents a collection of all migrations of a database schema.
@@ -37,6 +39,7 @@ type Xormigrate struct {
 	db         *xorm.Engine
 	migrations []*Migration
 	initSchema InitSchemaFunc
+	allowLong bool
 }
 
 // ReservedIDError is returned when a migration is using a reserved ID
@@ -82,6 +85,7 @@ func New(db *xorm.Engine, migrations []*Migration) *Xormigrate {
 	return &Xormigrate{
 		db:         db,
 		migrations: migrations,
+		allowLong: false,
 	}
 }
 
@@ -91,6 +95,18 @@ func New(db *xorm.Engine, migrations []*Migration) *Xormigrate {
 // foreign key necessary to your application.
 func (x *Xormigrate) InitSchema(initSchema InitSchemaFunc) {
 	x.initSchema = initSchema
+}
+
+// InitSchema sets a function that is run if no migration is found.
+// The idea is preventing to run all migrations when a new clean database
+// is being migratinx. In this function you should create all tables and
+// foreign key necessary to your application.
+func (x *Xormigrate) AllowLong(allow ...bool) {
+	allowLong := true
+	if len(allow) > 0 {
+		allowLong = allow[0]
+	}
+	x.allowLong = allowLong
 }
 
 // Migrate executes all migrations that did not run yet.
@@ -128,6 +144,9 @@ func (x *Xormigrate) migrate(migrationID string) error {
 	}
 
 	for _, migration := range x.migrations {
+		if migration.Long && !x.allowLong {
+			continue
+		}
 		if err := x.runMigration(migration); err != nil {
 			return err
 		}
