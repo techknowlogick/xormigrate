@@ -20,31 +20,31 @@ var migrations = []*Migration{
 	{
 		ID:          "201608301400",
 		Description: "Add Person",
-		Migrate: func(tx *xorm.Engine) error {
-			return tx.Sync2(&Person{})
+		Migrate: func(tx *xorm.Session) error {
+			return tx.Sync(&Person{})
 		},
-		Rollback: func(tx *xorm.Engine) error {
-			return tx.DropTables(&Person{})
+		Rollback: func(tx *xorm.Session) error {
+			return tx.DropTable(&Person{})
 		},
 	},
 	{
 		ID: "201608301430",
-		Migrate: func(tx *xorm.Engine) error {
-			return tx.Sync2(&Pet{})
+		Migrate: func(tx *xorm.Session) error {
+			return tx.Sync(&Pet{})
 		},
-		Rollback: func(tx *xorm.Engine) error {
-			return tx.DropTables(&Pet{})
+		Rollback: func(tx *xorm.Session) error {
+			return tx.DropTable(&Pet{})
 		},
 	},
 }
 
 var extendedMigrations = append(migrations, &Migration{
 	ID: "201807221927",
-	Migrate: func(tx *xorm.Engine) error {
-		return tx.Sync2(&Book{})
+	Migrate: func(tx *xorm.Session) error {
+		return tx.Sync(&Book{})
 	},
-	Rollback: func(tx *xorm.Engine) error {
-		return tx.DropTables(&Book{})
+	Rollback: func(tx *xorm.Session) error {
+		return tx.DropTable(&Book{})
 	},
 })
 
@@ -148,11 +148,11 @@ func TestRollbackTo(t *testing.T) {
 func TestInitSchemaNoMigrations(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		m := New(db, []*Migration{})
-		m.InitSchema(func(tx *xorm.Engine) error {
-			if err := tx.Sync2(&Person{}); err != nil {
+		m.InitSchema(func(tx *xorm.Session) error {
+			if err := tx.Sync(&Person{}); err != nil {
 				return err
 			}
-			return tx.Sync2(&Pet{}) // return error or nil
+			return tx.Sync(&Pet{}) // return error or nil
 		})
 
 		assert.NoError(t, m.Migrate())
@@ -168,8 +168,8 @@ func TestInitSchemaNoMigrations(t *testing.T) {
 func TestInitSchemaWithMigrations(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		m := New(db, migrations)
-		m.InitSchema(func(tx *xorm.Engine) error {
-			return tx.Sync2(&Person{}) // return error or nil
+		m.InitSchema(func(tx *xorm.Session) error {
+			return tx.Sync(&Person{}) // return error or nil
 		})
 
 		assert.NoError(t, m.Migrate())
@@ -192,15 +192,15 @@ func TestInitSchemaAlreadyInitialised(t *testing.T) {
 		m := New(db, []*Migration{})
 
 		// Migrate with empty initialisation
-		m.InitSchema(func(tx *xorm.Engine) error {
+		m.InitSchema(func(tx *xorm.Session) error {
 			return nil
 		})
 		assert.NoError(t, m.Migrate())
 
 		// Then migrate again, this time with a non empty initialisation
 		// This second initialisation should not happen!
-		m.InitSchema(func(tx *xorm.Engine) error {
-			return tx.Sync2(&Car{}) // return error or nil
+		m.InitSchema(func(tx *xorm.Session) error {
+			return tx.Sync(&Car{}) // return error or nil
 		})
 		assert.NoError(t, m.Migrate())
 
@@ -226,8 +226,8 @@ func TestInitSchemaExistingMigrations(t *testing.T) {
 
 		// Then migrate again, this time with a non empty initialisation
 		// This initialisation should not happen!
-		m.InitSchema(func(tx *xorm.Engine) error {
-			return tx.Sync2(&Car{}) // return error or nil
+		m.InitSchema(func(tx *xorm.Session) error {
+			return tx.Sync(&Car{}) // return error or nil
 		})
 		assert.NoError(t, m.Migrate())
 
@@ -251,7 +251,7 @@ func TestMissingID(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		migrationsMissingID := []*Migration{
 			{
-				Migrate: func(tx *xorm.Engine) error {
+				Migrate: func(tx *xorm.Session) error {
 					return nil
 				},
 			},
@@ -267,7 +267,7 @@ func TestReservedID(t *testing.T) {
 		migrationsReservedID := []*Migration{
 			{
 				ID: "SCHEMA_INIT",
-				Migrate: func(tx *xorm.Engine) error {
+				Migrate: func(tx *xorm.Session) error {
 					return nil
 				},
 			},
@@ -284,13 +284,13 @@ func TestDuplicatedID(t *testing.T) {
 		migrationsDuplicatedID := []*Migration{
 			{
 				ID: "201705061500",
-				Migrate: func(tx *xorm.Engine) error {
+				Migrate: func(tx *xorm.Session) error {
 					return nil
 				},
 			},
 			{
 				ID: "201705061500",
-				Migrate: func(tx *xorm.Engine) error {
+				Migrate: func(tx *xorm.Session) error {
 					return nil
 				},
 			},
@@ -324,11 +324,11 @@ func TestAllowLong(t *testing.T) {
 			m := New(db, []*Migration{{
 				ID:   "201608301430",
 				Long: true,
-				Migrate: func(tx *xorm.Engine) error {
-					return tx.Sync2(&Pet{})
+				Migrate: func(tx *xorm.Session) error {
+					return tx.Sync(&Pet{})
 				},
-				Rollback: func(tx *xorm.Engine) error {
-					return tx.DropTables(&Pet{})
+				Rollback: func(tx *xorm.Session) error {
+					return tx.DropTable(&Pet{})
 				},
 			}})
 			err := m.Migrate()
@@ -340,11 +340,11 @@ func TestAllowLong(t *testing.T) {
 			m := New(db, []*Migration{{
 				ID:   "201608301430",
 				Long: true,
-				Migrate: func(tx *xorm.Engine) error {
-					return tx.Sync2(&Pet{})
+				Migrate: func(tx *xorm.Session) error {
+					return tx.Sync(&Pet{})
 				},
-				Rollback: func(tx *xorm.Engine) error {
-					return tx.DropTables(&Pet{})
+				Rollback: func(tx *xorm.Session) error {
+					return tx.DropTable(&Pet{})
 				},
 			}})
 			m.AllowLong(true)
