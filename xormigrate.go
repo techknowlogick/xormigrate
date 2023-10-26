@@ -32,13 +32,13 @@ type Migration struct {
 	ID string `xorm:"id"`
 	// Description is the migration description, which is optionally printed out when the migration is ran.
 	Description string
-	// Migrate is a function that will br executed while running this migration.
+	// Migrate is a function that will be executed while running this migration.
 	Migrate MigrateFunc `xorm:"-"`
 	// Rollback will be executed on rollback. Can be nil.
 	Rollback RollbackFunc `xorm:"-"`
-	// Migrate is a function that will br executed while running this migration.
+	// MigrateSession is a function that will be executed while running this migration, using xorm.Session.
 	MigrateSession MigrateFuncSession `xorm:"-"`
-	// Rollback will be executed on rollback. Can be nil.
+	// RollbackSession will be executed on rollback, using xorm.Session. Can be nil.
 	RollbackSession RollbackFuncSession `xorm:"-"`
 	// Long marks the migration an non-required migration that will likely take a long time. Must use Xormigrate.AllowLong() to be enabled.
 	Long bool `xorm:"-"`
