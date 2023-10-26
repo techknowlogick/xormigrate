@@ -333,7 +333,6 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 				return err
 			}
 		}
-		
 
 		if err := x.insertMigration(migration.ID); err != nil {
 			return fmt.Errorf("inserting migration %s failed: %s", migration.ID, err.Error())
