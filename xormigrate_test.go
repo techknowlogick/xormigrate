@@ -38,6 +38,28 @@ var migrations = []*Migration{
 	},
 }
 
+var migrationsSession = []*Migration{
+	{
+		ID:          "201608301400",
+		Description: "Add Person",
+		MigrateSession: func(tx *xorm.Session) error {
+			return tx.Sync(&Person{})
+		},
+		RollbackSession: func(tx *xorm.Session) error {
+			return tx.DropTable(&Person{})
+		},
+	},
+	{
+		ID: "201608301430",
+		MigrateSession: func(tx *xorm.Session) error {
+			return tx.Sync2(&Pet{})
+		},
+		RollbackSession: func(tx *xorm.Session) error {
+			return tx.DropTable(&Pet{})
+		},
+	},
+}
+
 var extendedMigrations = append(migrations, &Migration{
 	ID: "201807221927",
 	Migrate: func(tx *xorm.Engine) error {
@@ -352,6 +374,42 @@ func TestAllowLong(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, int64(1), tableCount(t, db))
 		})
+	})
+}
+
+func TestMigrationSession(t *testing.T) {
+	forEachDatabase(t, func(db *xorm.Engine) {
+		m := New(db, migrationsSession)
+
+		err := m.Migrate()
+		assert.NoError(t, err)
+		has, err := db.IsTableExist(&Person{})
+		assert.NoError(t, err)
+		assert.True(t, has)
+		has, err = db.IsTableExist(&Pet{})
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.Equal(t, int64(2), tableCount(t, db))
+
+		err = m.RollbackLast()
+		assert.NoError(t, err)
+		has, err = db.IsTableExist(&Person{})
+		assert.NoError(t, err)
+		assert.True(t, has)
+		has, err = db.Exist(&Pet{})
+		assert.Error(t, err)
+		assert.False(t, has)
+		assert.Equal(t, int64(1), tableCount(t, db))
+
+		err = m.RollbackLast()
+		assert.NoError(t, err)
+		has, err = db.IsTableExist(&Person{})
+		assert.NoError(t, err)
+		assert.False(t, has)
+		has, err = db.IsTableExist(&Pet{})
+		assert.NoError(t, err)
+		assert.False(t, has)
+		assert.Equal(t, int64(0), tableCount(t, db))
 	})
 }
 
