@@ -20,19 +20,41 @@ var migrations = []*Migration{
 	{
 		ID:          "201608301400",
 		Description: "Add Person",
-		Migrate: func(tx *xorm.Session) error {
+		Migrate: func(tx *xorm.Engine) error {
+			return tx.Sync2(&Person{})
+		},
+		Rollback: func(tx *xorm.Engine) error {
+			return tx.DropTables(&Person{})
+		},
+	},
+	{
+		ID: "201608301430",
+		Migrate: func(tx *xorm.Engine) error {
+			return tx.Sync2(&Pet{})
+		},
+		Rollback: func(tx *xorm.Engine) error {
+			return tx.DropTables(&Pet{})
+		},
+	},
+}
+
+var migrationsSession = []*Migration{
+	{
+		ID:          "201608301400",
+		Description: "Add Person",
+		MigrateSession: func(tx *xorm.Session) error {
 			return tx.Sync(&Person{})
 		},
-		Rollback: func(tx *xorm.Session) error {
+		RollbackSession: func(tx *xorm.Session) error {
 			return tx.DropTable(&Person{})
 		},
 	},
 	{
 		ID: "201608301430",
-		Migrate: func(tx *xorm.Session) error {
-			return tx.Sync(&Pet{})
+		MigrateSession: func(tx *xorm.Session) error {
+			return tx.Sync2(&Pet{})
 		},
-		Rollback: func(tx *xorm.Session) error {
+		RollbackSession: func(tx *xorm.Session) error {
 			return tx.DropTable(&Pet{})
 		},
 	},
@@ -40,11 +62,11 @@ var migrations = []*Migration{
 
 var extendedMigrations = append(migrations, &Migration{
 	ID: "201807221927",
-	Migrate: func(tx *xorm.Session) error {
-		return tx.Sync(&Book{})
+	Migrate: func(tx *xorm.Engine) error {
+		return tx.Sync2(&Book{})
 	},
-	Rollback: func(tx *xorm.Session) error {
-		return tx.DropTable(&Book{})
+	Rollback: func(tx *xorm.Engine) error {
+		return tx.DropTables(&Book{})
 	},
 })
 
@@ -148,11 +170,11 @@ func TestRollbackTo(t *testing.T) {
 func TestInitSchemaNoMigrations(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		m := New(db, []*Migration{})
-		m.InitSchema(func(tx *xorm.Session) error {
-			if err := tx.Sync(&Person{}); err != nil {
+		m.InitSchema(func(tx *xorm.Engine) error {
+			if err := tx.Sync2(&Person{}); err != nil {
 				return err
 			}
-			return tx.Sync(&Pet{}) // return error or nil
+			return tx.Sync2(&Pet{}) // return error or nil
 		})
 
 		assert.NoError(t, m.Migrate())
@@ -168,8 +190,8 @@ func TestInitSchemaNoMigrations(t *testing.T) {
 func TestInitSchemaWithMigrations(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		m := New(db, migrations)
-		m.InitSchema(func(tx *xorm.Session) error {
-			return tx.Sync(&Person{}) // return error or nil
+		m.InitSchema(func(tx *xorm.Engine) error {
+			return tx.Sync2(&Person{}) // return error or nil
 		})
 
 		assert.NoError(t, m.Migrate())
@@ -192,15 +214,15 @@ func TestInitSchemaAlreadyInitialised(t *testing.T) {
 		m := New(db, []*Migration{})
 
 		// Migrate with empty initialisation
-		m.InitSchema(func(tx *xorm.Session) error {
+		m.InitSchema(func(tx *xorm.Engine) error {
 			return nil
 		})
 		assert.NoError(t, m.Migrate())
 
 		// Then migrate again, this time with a non empty initialisation
 		// This second initialisation should not happen!
-		m.InitSchema(func(tx *xorm.Session) error {
-			return tx.Sync(&Car{}) // return error or nil
+		m.InitSchema(func(tx *xorm.Engine) error {
+			return tx.Sync2(&Car{}) // return error or nil
 		})
 		assert.NoError(t, m.Migrate())
 
@@ -226,8 +248,8 @@ func TestInitSchemaExistingMigrations(t *testing.T) {
 
 		// Then migrate again, this time with a non empty initialisation
 		// This initialisation should not happen!
-		m.InitSchema(func(tx *xorm.Session) error {
-			return tx.Sync(&Car{}) // return error or nil
+		m.InitSchema(func(tx *xorm.Engine) error {
+			return tx.Sync2(&Car{}) // return error or nil
 		})
 		assert.NoError(t, m.Migrate())
 
@@ -251,7 +273,7 @@ func TestMissingID(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		migrationsMissingID := []*Migration{
 			{
-				Migrate: func(tx *xorm.Session) error {
+				Migrate: func(tx *xorm.Engine) error {
 					return nil
 				},
 			},
@@ -267,7 +289,7 @@ func TestReservedID(t *testing.T) {
 		migrationsReservedID := []*Migration{
 			{
 				ID: "SCHEMA_INIT",
-				Migrate: func(tx *xorm.Session) error {
+				Migrate: func(tx *xorm.Engine) error {
 					return nil
 				},
 			},
@@ -284,13 +306,13 @@ func TestDuplicatedID(t *testing.T) {
 		migrationsDuplicatedID := []*Migration{
 			{
 				ID: "201705061500",
-				Migrate: func(tx *xorm.Session) error {
+				Migrate: func(tx *xorm.Engine) error {
 					return nil
 				},
 			},
 			{
 				ID: "201705061500",
-				Migrate: func(tx *xorm.Session) error {
+				Migrate: func(tx *xorm.Engine) error {
 					return nil
 				},
 			},
@@ -324,11 +346,11 @@ func TestAllowLong(t *testing.T) {
 			m := New(db, []*Migration{{
 				ID:   "201608301430",
 				Long: true,
-				Migrate: func(tx *xorm.Session) error {
-					return tx.Sync(&Pet{})
+				Migrate: func(tx *xorm.Engine) error {
+					return tx.Sync2(&Pet{})
 				},
-				Rollback: func(tx *xorm.Session) error {
-					return tx.DropTable(&Pet{})
+				Rollback: func(tx *xorm.Engine) error {
+					return tx.DropTables(&Pet{})
 				},
 			}})
 			err := m.Migrate()
@@ -340,11 +362,11 @@ func TestAllowLong(t *testing.T) {
 			m := New(db, []*Migration{{
 				ID:   "201608301430",
 				Long: true,
-				Migrate: func(tx *xorm.Session) error {
-					return tx.Sync(&Pet{})
+				Migrate: func(tx *xorm.Engine) error {
+					return tx.Sync2(&Pet{})
 				},
-				Rollback: func(tx *xorm.Session) error {
-					return tx.DropTable(&Pet{})
+				Rollback: func(tx *xorm.Engine) error {
+					return tx.DropTables(&Pet{})
 				},
 			}})
 			m.AllowLong(true)
@@ -352,6 +374,42 @@ func TestAllowLong(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, int64(1), tableCount(t, db))
 		})
+	})
+}
+
+func TestMigrationSession(t *testing.T) {
+	forEachDatabase(t, func(db *xorm.Engine) {
+		m := New(db, migrationsSession)
+
+		err := m.Migrate()
+		assert.NoError(t, err)
+		has, err := db.IsTableExist(&Person{})
+		assert.NoError(t, err)
+		assert.True(t, has)
+		has, err = db.IsTableExist(&Pet{})
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.Equal(t, int64(2), tableCount(t, db))
+
+		err = m.RollbackLast()
+		assert.NoError(t, err)
+		has, err = db.IsTableExist(&Person{})
+		assert.NoError(t, err)
+		assert.True(t, has)
+		has, err = db.Exist(&Pet{})
+		assert.Error(t, err)
+		assert.False(t, has)
+		assert.Equal(t, int64(1), tableCount(t, db))
+
+		err = m.RollbackLast()
+		assert.NoError(t, err)
+		has, err = db.IsTableExist(&Person{})
+		assert.NoError(t, err)
+		assert.False(t, has)
+		has, err = db.IsTableExist(&Pet{})
+		assert.NoError(t, err)
+		assert.False(t, has)
+		assert.Equal(t, int64(0), tableCount(t, db))
 	})
 }
 

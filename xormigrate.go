@@ -12,13 +12,19 @@ const (
 )
 
 // MigrateFunc is the func signature for migrating.
-type MigrateFunc func(*xorm.Session) error
+type MigrateFunc func(*xorm.Engine) error
 
 // RollbackFunc is the func signature for rollbacking.
-type RollbackFunc func(*xorm.Session) error
+type RollbackFunc func(*xorm.Engine) error
 
 // InitSchemaFunc is the func signature for initializing the schema.
-type InitSchemaFunc func(*xorm.Session) error
+type InitSchemaFunc func(*xorm.Engine) error
+
+// MigrateFunc is the func signature for migrating.
+type MigrateFuncSession func(*xorm.Session) error
+
+// RollbackFunc is the func signature for rollbacking.
+type RollbackFuncSession func(*xorm.Session) error
 
 // Migration represents a database migration (a modification to be made on the database).
 type Migration struct {
@@ -30,6 +36,10 @@ type Migration struct {
 	Migrate MigrateFunc `xorm:"-"`
 	// Rollback will be executed on rollback. Can be nil.
 	Rollback RollbackFunc `xorm:"-"`
+	// Migrate is a function that will br executed while running this migration.
+	MigrateSession MigrateFuncSession `xorm:"-"`
+	// Rollback will be executed on rollback. Can be nil.
+	RollbackSession RollbackFuncSession `xorm:"-"`
 	// Long marks the migration an non-required migration that will likely take a long time. Must use Xormigrate.AllowLong() to be enabled.
 	Long bool `xorm:"-"`
 }
@@ -251,19 +261,25 @@ func (x *Xormigrate) RollbackMigration(m *Migration) error {
 }
 
 func (x *Xormigrate) rollbackMigration(m *Migration) error {
-	if m.Rollback == nil {
+	if m.Rollback == nil && m.RollbackSession == nil {
 		return ErrRollbackImpossible
 	}
 	if len(m.Description) > 0 {
 		logger.Errorf("Rolling back migration: %s", m.Description)
 	}
-	sess := x.db.NewSession()
-	if err := m.Rollback(sess); err != nil {
-		rollbackSession(sess)
-		return err
-	}
-	if err := sess.Commit(); err != nil {
-		return err
+	if m.Rollback != nil {
+		if err := m.Rollback(x.db); err != nil {
+			return err
+		}
+	} else {
+		sess := x.db.NewSession()
+		if err := m.RollbackSession(sess); err != nil {
+			rollbackSession(sess)
+			return err
+		}
+		if err := sess.Commit(); err != nil {
+			return err
+		}
 	}
 	if _, err := x.db.In("id", m.ID).Delete(&Migration{}); err != nil {
 		return err
@@ -274,7 +290,7 @@ func (x *Xormigrate) rollbackMigration(m *Migration) error {
 func (x *Xormigrate) runInitSchema() error {
 	logger.Info("Initializing Schema")
 	sess := x.db.NewSession()
-	if err := x.initSchema(sess); err != nil {
+	if err := x.initSchema(x.db); err != nil {
 		rollbackSession(sess)
 		return err
 	}
@@ -303,14 +319,21 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 		if len(migration.Description) > 0 {
 			logger.Info(migration.Description)
 		}
-		sess := x.db.NewSession()
-		if err := migration.Migrate(sess); err != nil {
-			rollbackSession(sess)
-			return fmt.Errorf("migration %s failed: %s", migration.ID, err.Error())
+		if migration.Migrate != nil {
+			if err := migration.Migrate(x.db); err != nil {
+				return fmt.Errorf("migration %s failed: %s", migration.ID, err.Error())
+			}
+		} else {
+			sess := x.db.NewSession()
+			if err := migration.MigrateSession(sess); err != nil {
+				rollbackSession(sess)
+				return fmt.Errorf("migration %s failed: %s", migration.ID, err.Error())
+			}
+			if err := sess.Commit(); err != nil {
+				return err
+			}
 		}
-		if err := sess.Commit(); err != nil {
-			return err
-		}
+		
 
 		if err := x.insertMigration(migration.ID); err != nil {
 			return fmt.Errorf("inserting migration %s failed: %s", migration.ID, err.Error())
