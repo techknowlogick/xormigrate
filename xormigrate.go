@@ -20,10 +20,10 @@ type RollbackFunc func(*xorm.Engine) error
 // InitSchemaFunc is the func signature for initializing the schema.
 type InitSchemaFunc func(*xorm.Engine) error
 
-// MigrateFunc is the func signature for migrating.
+// MigrateFuncSession is the func signature for migrating using xorm.Session.
 type MigrateFuncSession func(*xorm.Session) error
 
-// RollbackFunc is the func signature for rollbacking.
+// RollbackFuncSession is the func signature for rollbacking using xorm.Session.
 type RollbackFuncSession func(*xorm.Session) error
 
 // Migration represents a database migration (a modification to be made on the database).
@@ -107,10 +107,7 @@ func (x *Xormigrate) InitSchema(initSchema InitSchemaFunc) {
 	x.initSchema = initSchema
 }
 
-// InitSchema sets a function that is run if no migration is found.
-// The idea is preventing to run all migrations when a new clean database
-// is being migratinx. In this function you should create all tables and
-// foreign key necessary to your application.
+// AllowLong enables migrations that are marked as probably long-running.
 func (x *Xormigrate) AllowLong(allow ...bool) {
 	allowLong := true
 	if len(allow) > 0 {
