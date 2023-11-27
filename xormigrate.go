@@ -152,6 +152,7 @@ func (x *Xormigrate) migrate(migrationID string) error {
 
 	for _, migration := range x.migrations {
 		if migration.Long && !x.allowLong {
+			logger.Debugf("skipping migration %s: long migrations are disabled", migration.ID)
 			continue
 		}
 		if err := x.runMigration(migration); err != nil {
