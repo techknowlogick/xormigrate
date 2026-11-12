@@ -340,7 +340,7 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 }
 
 func (x *Xormigrate) createMigrationTableIfNotExists() error {
-	err := x.db.Sync2(new(Migration))
+	err := x.db.Sync(new(Migration))
 	return err
 }
 

@@ -50,7 +50,7 @@ func main() {
 				type Person struct {
 					Name string
 				}
-				return tx.Sync2(&Person{})
+				return tx.Sync(&Person{})
 			},
 			Rollback: func(tx *xorm.Engine) error {
 				return tx.DropTables(&Person{})
@@ -64,7 +64,7 @@ func main() {
 				type Person struct {
 					Age int
 				}
-				return tx.Sync2(&Person{})
+				return tx.Sync(&Person{})
 			},
 			Rollback: func(tx *xorm.Engine) error {
 				// Note: Column dropping in sqlite is not support, and you will need to do this manually
@@ -83,7 +83,7 @@ func main() {
 					Name     string
 					PersonID int
 				}
-				return tx.Sync2(&Pet{})
+				return tx.Sync(&Pet{})
 			},
 			Rollback: func(tx *xorm.Engine) error {
 				return tx.DropTables(&Pet{})
