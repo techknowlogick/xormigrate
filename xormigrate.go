@@ -340,13 +340,13 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 		}
 		if migration.Migrate != nil {
 			if err := migration.Migrate(x.db); err != nil {
-				return fmt.Errorf("migration %s failed: %s", migration.ID, err.Error())
+				return fmt.Errorf("migration %s failed: %w", migration.ID, err)
 			}
 		} else {
 			sess := x.db.NewSession()
 			if err := migration.MigrateSession(sess); err != nil {
 				rollbackSession(sess)
-				return fmt.Errorf("migration %s failed: %s", migration.ID, err.Error())
+				return fmt.Errorf("migration %s failed: %w", migration.ID, err)
 			}
 			if err := sess.Commit(); err != nil {
 				return err
@@ -354,7 +354,7 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 		}
 
 		if err := x.insertMigration(migration.ID); err != nil {
-			return fmt.Errorf("inserting migration %s failed: %s", migration.ID, err.Error())
+			return fmt.Errorf("inserting migration %s failed: %w", migration.ID, err)
 		}
 	}
 	return nil
