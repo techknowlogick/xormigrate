@@ -41,7 +41,7 @@ type Migration struct {
 	MigrateSession MigrateFuncSession `xorm:"-"`
 	// RollbackSession will be executed on rollback, using xorm.Session. Can be nil.
 	RollbackSession RollbackFuncSession `xorm:"-"`
-	// Long marks the migration an non-required migration that will likely take a long time. Must use Xormigrate.AllowLong() to be enabled.
+	// Long marks the migration as a non-required migration that will likely take a long time. Must use Xormigrate.AllowLong() to be enabled.
 	Long bool `xorm:"-"`
 }
 
@@ -79,7 +79,7 @@ var (
 	// ErrNoMigrationDefined is returned when no migration is defined.
 	ErrNoMigrationDefined = errors.New("xormigrate: No migration defined")
 
-	// ErrMissingID is returned when the ID od migration is equal to "".
+	// ErrMissingID is returned when the ID of a migration is equal to "".
 	ErrMissingID = errors.New("xormigrate: Missing ID in migration")
 
 	// ErrMissingMigrate is returned when a migration has neither Migrate nor MigrateSession.
@@ -105,7 +105,7 @@ func New(db *xorm.Engine, migrations []*Migration) *Xormigrate {
 
 // InitSchema sets a function that is run if no migration is found.
 // The idea is preventing to run all migrations when a new clean database
-// is being migratinx. In this function you should create all tables and
+// is being migrated. In this function you should create all tables and
 // foreign key necessary to your application.
 func (x *Xormigrate) InitSchema(initSchema InitSchemaFunc) {
 	x.initSchema = initSchema

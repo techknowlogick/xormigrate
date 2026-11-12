@@ -44,7 +44,7 @@ func main() {
 			// An optional description to print out to the Xormigrate logger
 			Description: "Create the Person table",
 			Migrate: func(tx *xorm.Engine) error {
-				// it's a good pratice to copy the struct inside the function,
+				// it's a good practice to copy the struct inside the function,
 				// so side effects are prevented if the original struct changes during the time
 				type Person struct {
 					Name string
