@@ -3,6 +3,7 @@ package xormigrate // import "src.techknowlogick.com/xormigrate"
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"xorm.io/xorm"
 )
@@ -175,10 +176,8 @@ func (x *Xormigrate) hasMigrations() bool {
 // Check whether any migration is using a reserved ID.
 // For now there's only have one reserved ID, but there may be more in the future.
 func (x *Xormigrate) checkReservedID() error {
-	for _, m := range x.migrations {
-		if m.ID == initSchemaMigrationId {
-			return &ReservedIDError{ID: m.ID}
-		}
+	if slices.ContainsFunc(x.migrations, func(m *Migration) bool { return m.ID == initSchemaMigrationId }) {
+		return &ReservedIDError{ID: initSchemaMigrationId}
 	}
 	return nil
 }
@@ -195,12 +194,10 @@ func (x *Xormigrate) checkDuplicatedID() error {
 }
 
 func (x *Xormigrate) checkIDExist(migrationID string) error {
-	for _, migrate := range x.migrations {
-		if migrate.ID == migrationID {
-			return nil
-		}
+	if !slices.ContainsFunc(x.migrations, func(m *Migration) bool { return m.ID == migrationID }) {
+		return ErrMigrationIDDoesNotExist
 	}
-	return ErrMigrationIDDoesNotExist
+	return nil
 }
 
 // RollbackLast undo the last migration
