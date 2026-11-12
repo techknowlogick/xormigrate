@@ -1,0 +1,100 @@
+version: '2'
+run:
+  timeout: 15m
+  build-tags:
+    - sqlite
+    - mysql
+    - postgresql
+    - sqlserver
+linters:
+  default: none
+  enable:
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - dogsled
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errorlint
+    - forbidigo
+    - forcetypeassert
+    - gochecknoinits
+    - gocritic
+    - godot
+    - gomoddirectives
+    - goprintffuncname
+    - govet
+    - ineffassign
+    - makezero
+    - misspell
+    - mnd
+    - modernize
+    - nolintlint
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - tagalign
+    - unconvert
+    - unparam
+    - unused
+    - usetesting
+    - wastedassign
+    - whitespace
+  settings:
+    errorlint:
+      errorf-multi: true
+    forbidigo:
+      forbid:
+        - pattern: ^print.*$
+        - pattern: panic
+    godot:
+      scope: toplevel
+      exclude:
+        - '^\s*TODO:'
+      capital: true
+      period: true
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: enforce-map-style
+          arguments: [make]
+    usetesting:
+      context-background: true
+      context-todo: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      # tests register their database in init
+      - linters:
+          - gochecknoinits
+        path: _test.go
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+    gofmt:
+      simplify: true
+      rewrite-rules:
+        - pattern: interface{}
+          replacement: any
+    gofumpt:
+      extra:
+        group-params: true
+        clothe-returns: true
+        balance-calls: true
+  exclusions:
+    generated: lax
