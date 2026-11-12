@@ -1,4 +1,4 @@
-package xormigrate // import "src.techknowlogick.com/xormigrate"
+package xormigrate
 
 import (
 	"errors"
@@ -53,7 +53,7 @@ type Xormigrate struct {
 	allowLong  bool
 }
 
-// ReservedIDError is returned when a migration is using a reserved ID
+// ReservedIDError is returned when a migration is using a reserved ID.
 type ReservedIDError struct {
 	ID string
 }
@@ -62,7 +62,7 @@ func (e *ReservedIDError) Error() string {
 	return fmt.Sprintf(`xormigrate: Reserved migration ID: "%s"`, e.ID)
 }
 
-// DuplicatedIDError is returned when more than one migration have the same ID
+// DuplicatedIDError is returned when more than one migration have the same ID.
 type DuplicatedIDError struct {
 	ID string
 }
@@ -79,18 +79,18 @@ var (
 	// ErrNoMigrationDefined is returned when no migration is defined.
 	ErrNoMigrationDefined = errors.New("xormigrate: No migration defined")
 
-	// ErrMissingID is returned when the ID od migration is equal to ""
+	// ErrMissingID is returned when the ID od migration is equal to "".
 	ErrMissingID = errors.New("xormigrate: Missing ID in migration")
 
-	// ErrMissingMigrate is returned when a migration has neither Migrate nor MigrateSession
+	// ErrMissingMigrate is returned when a migration has neither Migrate nor MigrateSession.
 	ErrMissingMigrate = errors.New("xormigrate: Missing Migrate or MigrateSession in migration")
 
 	// ErrNoRunMigration is returned when any run migration was found while
-	// running RollbackLast
+	// running RollbackLast.
 	ErrNoRunMigration = errors.New("xormigrate: Could not find last run migration")
 
 	// ErrMigrationIDDoesNotExist is returned when migrating or rolling back to a migration ID that
-	// does not exist in the list of migrations
+	// does not exist in the list of migrations.
 	ErrMigrationIDDoesNotExist = errors.New("xormigrate: Tried to migrate to an ID that doesn't exist")
 )
 
@@ -209,7 +209,7 @@ func (x *Xormigrate) checkIDExist(migrationID string) error {
 	return nil
 }
 
-// RollbackLast undo the last migration
+// RollbackLast undo the last migration.
 func (x *Xormigrate) RollbackLast() error {
 	if len(x.migrations) == 0 {
 		return ErrNoMigrationDefined
@@ -234,8 +234,7 @@ func (x *Xormigrate) RollbackTo(migrationID string) error {
 		return err
 	}
 
-	for i := len(x.migrations) - 1; i >= 0; i-- {
-		migration := x.migrations[i]
+	for _, migration := range slices.Backward(x.migrations) {
 		if migration.ID == migrationID {
 			break
 		}
@@ -254,8 +253,7 @@ func (x *Xormigrate) RollbackTo(migrationID string) error {
 }
 
 func (x *Xormigrate) getLastRunMigration() (*Migration, error) {
-	for i := len(x.migrations) - 1; i >= 0; i-- {
-		migration := x.migrations[i]
+	for _, migration := range slices.Backward(x.migrations) {
 		didRun, err := x.migrationDidRun(migration)
 		if err != nil {
 			return nil, err
@@ -372,11 +370,11 @@ func (x *Xormigrate) migrationDidRun(m *Migration) (bool, error) {
 	return count > 0, err
 }
 
-// The schema can be initialised only if it hasn't been initialised yet
+// The schema can be initialized only if it hasn't been initialized yet
 // and no other migration has been applied already.
 func (x *Xormigrate) canInitializeSchema() (bool, error) {
-	initialised, err := x.migrationDidRun(&Migration{ID: initSchemaMigrationId})
-	if err != nil || initialised {
+	initialized, err := x.migrationDidRun(&Migration{ID: initSchemaMigrationId})
+	if err != nil || initialized {
 		return false, err
 	}
 

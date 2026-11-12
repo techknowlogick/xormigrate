@@ -204,7 +204,7 @@ func TestInitSchemaWithMigrations(t *testing.T) {
 	})
 }
 
-// If the schema has already been initialised,
+// If the schema has already been initialized,
 // then initSchema() is not executed, even if defined.
 func TestInitSchemaAlreadyInitialised(t *testing.T) {
 	type Car struct {
@@ -233,7 +233,7 @@ func TestInitSchemaAlreadyInitialised(t *testing.T) {
 	})
 }
 
-// If the schema has not already been initialised,
+// If the schema has not already been initialized,
 // but any other migration has already been applied,
 // then initSchema() is not executed, even if defined.
 func TestInitSchemaExistingMigrations(t *testing.T) {
@@ -335,8 +335,7 @@ func TestReservedID(t *testing.T) {
 		}
 
 		m := New(db, migrationsReservedID)
-		_, isReservedIDError := m.Migrate().(*ReservedIDError)
-		assert.True(t, isReservedIDError)
+		assert.ErrorAs(t, m.Migrate(), new(*ReservedIDError))
 	})
 }
 
@@ -358,8 +357,7 @@ func TestDuplicatedID(t *testing.T) {
 		}
 
 		m := New(db, migrationsDuplicatedID)
-		_, isDuplicatedIDError := m.Migrate().(*DuplicatedIDError)
-		assert.True(t, isDuplicatedIDError)
+		assert.ErrorAs(t, m.Migrate(), new(*DuplicatedIDError))
 	})
 }
 
@@ -455,12 +453,12 @@ func TestMigrationSession(t *testing.T) {
 func tableCount(t *testing.T, db *xorm.Engine) (count int64) {
 	count, err := db.Count(&Migration{})
 	assert.NoError(t, err)
-	return
+	return count
 }
 
 func forEachDatabase(t *testing.T, fn func(database *xorm.Engine)) {
 	if len(databases) == 0 {
-		panic("No database chosen for testing!")
+		t.Fatal("No database chosen for testing!")
 	}
 
 	for _, database := range databases {

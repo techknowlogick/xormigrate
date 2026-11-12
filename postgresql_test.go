@@ -1,5 +1,4 @@
 //go:build postgresql
-// +build postgresql
 
 package xormigrate
 
