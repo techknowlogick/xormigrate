@@ -1,6 +1,7 @@
 package xormigrate
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -288,6 +289,37 @@ func TestMissingMigrate(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		m := New(db, []*Migration{{ID: "201608301400"}})
 		assert.ErrorIs(t, m.Migrate(), ErrMissingMigrate)
+	})
+}
+
+func TestMigrationTableError(t *testing.T) {
+	forEachDatabase(t, func(db *xorm.Engine) {
+		m := New(db, migrations)
+		assert.NoError(t, m.Migrate())
+
+		// a failing query must not look like a migration that did not run
+		assert.NoError(t, db.DropTables(&Migration{}))
+		err := m.RollbackLast()
+		assert.Error(t, err)
+		assert.NotErrorIs(t, err, ErrNoRunMigration)
+		assert.Error(t, m.RollbackTo("201608301400"))
+	})
+}
+
+func TestMigrationErrorIsWrapped(t *testing.T) {
+	errMigrate := errors.New("migrate failed")
+	forEachDatabase(t, func(db *xorm.Engine) {
+		m := New(db, []*Migration{{
+			ID:      "201608301400",
+			Migrate: func(*xorm.Engine) error { return errMigrate },
+		}})
+		assert.ErrorIs(t, m.Migrate(), errMigrate)
+
+		m = New(db, []*Migration{{
+			ID:             "201608301400",
+			MigrateSession: func(*xorm.Session) error { return errMigrate },
+		}})
+		assert.ErrorIs(t, m.Migrate(), errMigrate)
 	})
 }
 

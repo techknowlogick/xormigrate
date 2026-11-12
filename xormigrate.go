@@ -150,8 +150,14 @@ func (x *Xormigrate) migrate(migrationID string) error {
 		return err
 	}
 
-	if x.initSchema != nil && x.canInitializeSchema() {
-		return x.runInitSchema() // return error or nil
+	if x.initSchema != nil {
+		canInit, err := x.canInitializeSchema()
+		if err != nil {
+			return err
+		}
+		if canInit {
+			return x.runInitSchema() // return error or nil
+		}
 	}
 
 	for _, migration := range x.migrations {
@@ -233,7 +239,11 @@ func (x *Xormigrate) RollbackTo(migrationID string) error {
 		if migration.ID == migrationID {
 			break
 		}
-		if x.migrationDidRun(migration) {
+		didRun, err := x.migrationDidRun(migration)
+		if err != nil {
+			return err
+		}
+		if didRun {
 			if err := x.rollbackMigration(migration); err != nil {
 				return err
 			}
@@ -246,7 +256,11 @@ func (x *Xormigrate) RollbackTo(migrationID string) error {
 func (x *Xormigrate) getLastRunMigration() (*Migration, error) {
 	for i := len(x.migrations) - 1; i >= 0; i-- {
 		migration := x.migrations[i]
-		if x.migrationDidRun(migration) {
+		didRun, err := x.migrationDidRun(migration)
+		if err != nil {
+			return nil, err
+		}
+		if didRun {
 			return migration, nil
 		}
 	}
@@ -313,7 +327,11 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 		return ErrMissingID
 	}
 
-	if !x.migrationDidRun(migration) {
+	didRun, err := x.migrationDidRun(migration)
+	if err != nil {
+		return err
+	}
+	if !didRun {
 		if migration.Migrate == nil && migration.MigrateSession == nil {
 			return fmt.Errorf("migration %s: %w", migration.ID, ErrMissingMigrate)
 		}
@@ -322,13 +340,13 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 		}
 		if migration.Migrate != nil {
 			if err := migration.Migrate(x.db); err != nil {
-				return fmt.Errorf("migration %s failed: %s", migration.ID, err.Error())
+				return fmt.Errorf("migration %s failed: %w", migration.ID, err)
 			}
 		} else {
 			sess := x.db.NewSession()
 			if err := migration.MigrateSession(sess); err != nil {
 				rollbackSession(sess)
-				return fmt.Errorf("migration %s failed: %s", migration.ID, err.Error())
+				return fmt.Errorf("migration %s failed: %w", migration.ID, err)
 			}
 			if err := sess.Commit(); err != nil {
 				return err
@@ -336,7 +354,7 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 		}
 
 		if err := x.insertMigration(migration.ID); err != nil {
-			return fmt.Errorf("inserting migration %s failed: %s", migration.ID, err.Error())
+			return fmt.Errorf("inserting migration %s failed: %w", migration.ID, err)
 		}
 	}
 	return nil
@@ -347,30 +365,25 @@ func (x *Xormigrate) createMigrationTableIfNotExists() error {
 	return err
 }
 
-func (x *Xormigrate) migrationDidRun(m *Migration) bool {
+func (x *Xormigrate) migrationDidRun(m *Migration) (bool, error) {
 	count, err := x.db.
 		In("id", m.ID).
 		Count(&Migration{})
-	if err != nil {
-		return false
-	}
-	return count > 0
+	return count > 0, err
 }
 
 // The schema can be initialised only if it hasn't been initialised yet
 // and no other migration has been applied already.
-func (x *Xormigrate) canInitializeSchema() bool {
-	if x.migrationDidRun(&Migration{ID: initSchemaMigrationId}) {
-		return false
+func (x *Xormigrate) canInitializeSchema() (bool, error) {
+	initialised, err := x.migrationDidRun(&Migration{ID: initSchemaMigrationId})
+	if err != nil || initialised {
+		return false, err
 	}
 
 	// If the ID doesn't exist, we also want the list of migrations to be empty
 	count, err := x.db.
 		Count(&Migration{})
-	if err != nil {
-		return false
-	}
-	return count == 0
+	return count == 0, err
 }
 
 func (x *Xormigrate) insertMigration(id string) error {
