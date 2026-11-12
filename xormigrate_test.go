@@ -284,6 +284,13 @@ func TestMissingID(t *testing.T) {
 	})
 }
 
+func TestMissingMigrate(t *testing.T) {
+	forEachDatabase(t, func(db *xorm.Engine) {
+		m := New(db, []*Migration{{ID: "201608301400"}})
+		assert.ErrorIs(t, m.Migrate(), ErrMissingMigrate)
+	})
+}
+
 func TestReservedID(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		migrationsReservedID := []*Migration{

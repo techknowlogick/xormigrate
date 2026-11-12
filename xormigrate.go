@@ -81,6 +81,9 @@ var (
 	// ErrMissingID is returned when the ID od migration is equal to ""
 	ErrMissingID = errors.New("xormigrate: Missing ID in migration")
 
+	// ErrMissingMigrate is returned when a migration has neither Migrate nor MigrateSession
+	ErrMissingMigrate = errors.New("xormigrate: Missing Migrate or MigrateSession in migration")
+
 	// ErrNoRunMigration is returned when any run migration was found while
 	// running RollbackLast
 	ErrNoRunMigration = errors.New("xormigrate: Could not find last run migration")
@@ -314,6 +317,9 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 	}
 
 	if !x.migrationDidRun(migration) {
+		if migration.Migrate == nil && migration.MigrateSession == nil {
+			return fmt.Errorf("migration %s: %w", migration.ID, ErrMissingMigrate)
+		}
 		if len(migration.Description) > 0 {
 			logger.Info(migration.Description)
 		}
