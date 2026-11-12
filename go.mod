@@ -1,6 +1,6 @@
 module src.techknowlogick.com/xormigrate
 
-go 1.21
+go 1.25.0
 
 require (
 	github.com/denisenkom/go-mssqldb v0.12.3
@@ -23,8 +23,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/ccgo/v3 v3.17.0 // indirect
