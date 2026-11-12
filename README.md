@@ -1,5 +1,4 @@
 # Xormigrate
-[![Go Report Card](https://goreportcard.com/badge/src.techknowlogick.com/xormigrate)](https://goreportcard.com/report/src.techknowlogick.com/xormigrate)
 [![GoDoc](https://pkg.go.dev/badge/src.techknowlogick.com/xormigrate)](https://pkg.go.dev/src.techknowlogick.com/xormigrate)
 
 ## Supported databases
