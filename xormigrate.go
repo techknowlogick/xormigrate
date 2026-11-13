@@ -1,6 +1,7 @@
 package xormigrate
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
@@ -13,19 +14,19 @@ const (
 )
 
 // MigrateFunc is the func signature for migrating.
-type MigrateFunc func(*xorm.Engine) error
+type MigrateFunc func(context.Context, *xorm.Engine) error
 
 // RollbackFunc is the func signature for rollbacking.
-type RollbackFunc func(*xorm.Engine) error
+type RollbackFunc func(context.Context, *xorm.Engine) error
 
 // InitSchemaFunc is the func signature for initializing the schema.
-type InitSchemaFunc func(*xorm.Engine) error
+type InitSchemaFunc func(context.Context, *xorm.Engine) error
 
 // MigrateFuncSession is the func signature for migrating using xorm.Session.
-type MigrateFuncSession func(*xorm.Session) error
+type MigrateFuncSession func(context.Context, *xorm.Session) error
 
 // RollbackFuncSession is the func signature for rollbacking using xorm.Session.
-type RollbackFuncSession func(*xorm.Session) error
+type RollbackFuncSession func(context.Context, *xorm.Session) error
 
 // Migration represents a database migration (a modification to be made on the database).
 type Migration struct {
@@ -121,19 +122,20 @@ func (x *Xormigrate) AllowLong(allow ...bool) {
 }
 
 // Migrate executes all migrations that did not run yet.
-func (x *Xormigrate) Migrate() error {
-	return x.migrate("")
+// If ctx is canceled, it stops before the next migration.
+func (x *Xormigrate) Migrate(ctx context.Context) error {
+	return x.migrate(ctx, "")
 }
 
 // MigrateTo executes all migrations that did not run yet up to the migration that matches `migrationID`.
-func (x *Xormigrate) MigrateTo(migrationID string) error {
+func (x *Xormigrate) MigrateTo(ctx context.Context, migrationID string) error {
 	if err := x.checkIDExist(migrationID); err != nil {
 		return err
 	}
-	return x.migrate(migrationID)
+	return x.migrate(ctx, migrationID)
 }
 
-func (x *Xormigrate) migrate(migrationID string) error {
+func (x *Xormigrate) migrate(ctx context.Context, migrationID string) error {
 	if !x.hasMigrations() {
 		return ErrNoMigrationDefined
 	}
@@ -146,17 +148,17 @@ func (x *Xormigrate) migrate(migrationID string) error {
 		return err
 	}
 
-	if err := x.createMigrationTableIfNotExists(); err != nil {
+	if err := x.createMigrationTableIfNotExists(ctx); err != nil {
 		return err
 	}
 
 	if x.initSchema != nil {
-		canInit, err := x.canInitializeSchema()
+		canInit, err := x.canInitializeSchema(ctx)
 		if err != nil {
 			return err
 		}
 		if canInit {
-			return x.runInitSchema() // return error or nil
+			return x.runInitSchema(ctx) // return error or nil
 		}
 	}
 
@@ -165,7 +167,7 @@ func (x *Xormigrate) migrate(migrationID string) error {
 			logger.Debugf("skipping migration %s: long migrations are disabled", migration.ID)
 			continue
 		}
-		if err := x.runMigration(migration); err != nil {
+		if err := x.runMigration(ctx, migration); err != nil {
 			return err
 		}
 		if migrationID != "" && migration.ID == migrationID {
@@ -210,22 +212,22 @@ func (x *Xormigrate) checkIDExist(migrationID string) error {
 }
 
 // RollbackLast undo the last migration.
-func (x *Xormigrate) RollbackLast() error {
+func (x *Xormigrate) RollbackLast(ctx context.Context) error {
 	if len(x.migrations) == 0 {
 		return ErrNoMigrationDefined
 	}
 
-	lastRunMigration, err := x.getLastRunMigration()
+	lastRunMigration, err := x.getLastRunMigration(ctx)
 	if err != nil {
 		return err
 	}
 
-	return x.RollbackMigration(lastRunMigration) // return error or nil
+	return x.RollbackMigration(ctx, lastRunMigration) // return error or nil
 }
 
 // RollbackTo undoes migrations up to the given migration that matches the `migrationID`.
 // Migration with the matching `migrationID` is not rolled back.
-func (x *Xormigrate) RollbackTo(migrationID string) error {
+func (x *Xormigrate) RollbackTo(ctx context.Context, migrationID string) error {
 	if len(x.migrations) == 0 {
 		return ErrNoMigrationDefined
 	}
@@ -238,12 +240,12 @@ func (x *Xormigrate) RollbackTo(migrationID string) error {
 		if migration.ID == migrationID {
 			break
 		}
-		didRun, err := x.migrationDidRun(migration)
+		didRun, err := x.migrationDidRun(ctx, migration)
 		if err != nil {
 			return err
 		}
 		if didRun {
-			if err := x.rollbackMigration(migration); err != nil {
+			if err := x.rollbackMigration(ctx, migration); err != nil {
 				return err
 			}
 		}
@@ -252,9 +254,9 @@ func (x *Xormigrate) RollbackTo(migrationID string) error {
 	return nil
 }
 
-func (x *Xormigrate) getLastRunMigration() (*Migration, error) {
+func (x *Xormigrate) getLastRunMigration(ctx context.Context) (*Migration, error) {
 	for _, migration := range slices.Backward(x.migrations) {
-		didRun, err := x.migrationDidRun(migration)
+		didRun, err := x.migrationDidRun(ctx, migration)
 		if err != nil {
 			return nil, err
 		}
@@ -266,11 +268,11 @@ func (x *Xormigrate) getLastRunMigration() (*Migration, error) {
 }
 
 // RollbackMigration undo a migration.
-func (x *Xormigrate) RollbackMigration(m *Migration) error {
-	return x.rollbackMigration(m) // return error or nil
+func (x *Xormigrate) RollbackMigration(ctx context.Context, m *Migration) error {
+	return x.rollbackMigration(ctx, m) // return error or nil
 }
 
-func (x *Xormigrate) rollbackMigration(m *Migration) error {
+func (x *Xormigrate) rollbackMigration(ctx context.Context, m *Migration) error {
 	if m.Rollback == nil && m.RollbackSession == nil {
 		return ErrRollbackImpossible
 	}
@@ -278,13 +280,13 @@ func (x *Xormigrate) rollbackMigration(m *Migration) error {
 		logger.Errorf("Rolling back migration: %s", m.Description)
 	}
 	if m.Rollback != nil {
-		if err := m.Rollback(x.db); err != nil {
+		if err := m.Rollback(ctx, x.db); err != nil {
 			return err
 		}
 	} else {
-		sess := x.db.NewSession()
+		sess := x.db.NewSession().Context(ctx)
 		defer sess.Close()
-		if err := m.RollbackSession(sess); err != nil {
+		if err := m.RollbackSession(ctx, sess); err != nil {
 			rollbackSession(sess)
 			return err
 		}
@@ -292,23 +294,26 @@ func (x *Xormigrate) rollbackMigration(m *Migration) error {
 			return err
 		}
 	}
-	if _, err := x.db.In("id", m.ID).Delete(&Migration{}); err != nil {
+	// the rollback is done, so its record must go even if ctx was canceled meanwhile
+	if _, err := x.db.Context(context.WithoutCancel(ctx)).In("id", m.ID).Delete(&Migration{}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (x *Xormigrate) runInitSchema() error {
+func (x *Xormigrate) runInitSchema(ctx context.Context) error {
 	logger.Info("Initializing Schema")
-	if err := x.initSchema(x.db); err != nil {
+	if err := x.initSchema(ctx, x.db); err != nil {
 		return err
 	}
-	if err := x.insertMigration(initSchemaMigrationId); err != nil {
+	// the schema is done, so it must be recorded even if ctx was canceled meanwhile
+	ctx = context.WithoutCancel(ctx)
+	if err := x.insertMigration(ctx, initSchemaMigrationId); err != nil {
 		return err
 	}
 
 	for _, migration := range x.migrations {
-		if err := x.insertMigration(migration.ID); err != nil {
+		if err := x.insertMigration(ctx, migration.ID); err != nil {
 			return err
 		}
 	}
@@ -316,12 +321,12 @@ func (x *Xormigrate) runInitSchema() error {
 	return nil
 }
 
-func (x *Xormigrate) runMigration(migration *Migration) error {
+func (x *Xormigrate) runMigration(ctx context.Context, migration *Migration) error {
 	if len(migration.ID) == 0 {
 		return ErrMissingID
 	}
 
-	didRun, err := x.migrationDidRun(migration)
+	didRun, err := x.migrationDidRun(ctx, migration)
 	if err != nil {
 		return err
 	}
@@ -333,13 +338,13 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 			logger.Info(migration.Description)
 		}
 		if migration.Migrate != nil {
-			if err := migration.Migrate(x.db); err != nil {
+			if err := migration.Migrate(ctx, x.db); err != nil {
 				return fmt.Errorf("migration %s failed: %w", migration.ID, err)
 			}
 		} else {
-			sess := x.db.NewSession()
+			sess := x.db.NewSession().Context(ctx)
 			defer sess.Close()
-			if err := migration.MigrateSession(sess); err != nil {
+			if err := migration.MigrateSession(ctx, sess); err != nil {
 				rollbackSession(sess)
 				return fmt.Errorf("migration %s failed: %w", migration.ID, err)
 			}
@@ -348,20 +353,21 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 			}
 		}
 
-		if err := x.insertMigration(migration.ID); err != nil {
+		// the migration is done, so it must be recorded even if ctx was canceled meanwhile
+		if err := x.insertMigration(context.WithoutCancel(ctx), migration.ID); err != nil {
 			return fmt.Errorf("inserting migration %s failed: %w", migration.ID, err)
 		}
 	}
 	return nil
 }
 
-func (x *Xormigrate) createMigrationTableIfNotExists() error {
-	err := x.db.Sync(new(Migration))
+func (x *Xormigrate) createMigrationTableIfNotExists(ctx context.Context) error {
+	err := x.db.Context(ctx).Sync(new(Migration))
 	return err
 }
 
-func (x *Xormigrate) migrationDidRun(m *Migration) (bool, error) {
-	count, err := x.db.
+func (x *Xormigrate) migrationDidRun(ctx context.Context, m *Migration) (bool, error) {
+	count, err := x.db.Context(ctx).
 		In("id", m.ID).
 		Count(&Migration{})
 	return count > 0, err
@@ -369,20 +375,20 @@ func (x *Xormigrate) migrationDidRun(m *Migration) (bool, error) {
 
 // The schema can be initialized only if it hasn't been initialized yet
 // and no other migration has been applied already.
-func (x *Xormigrate) canInitializeSchema() (bool, error) {
-	initialized, err := x.migrationDidRun(&Migration{ID: initSchemaMigrationId})
+func (x *Xormigrate) canInitializeSchema(ctx context.Context) (bool, error) {
+	initialized, err := x.migrationDidRun(ctx, &Migration{ID: initSchemaMigrationId})
 	if err != nil || initialized {
 		return false, err
 	}
 
 	// If the ID doesn't exist, we also want the list of migrations to be empty
-	count, err := x.db.
+	count, err := x.db.Context(ctx).
 		Count(&Migration{})
 	return count == 0, err
 }
 
-func (x *Xormigrate) insertMigration(id string) error {
-	_, err := x.db.Insert(&Migration{ID: id})
+func (x *Xormigrate) insertMigration(ctx context.Context, id string) error {
+	_, err := x.db.Context(ctx).Insert(&Migration{ID: id})
 	return err
 }
 
