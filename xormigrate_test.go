@@ -260,6 +260,18 @@ func TestInitSchemaExistingMigrations(t *testing.T) {
 	})
 }
 
+func TestInitSchemaError(t *testing.T) {
+	errInit := errors.New("init schema failed")
+	forEachDatabase(t, func(db *xorm.Engine) {
+		m := New(db, migrations)
+		m.InitSchema(func(*xorm.Engine) error { return errInit })
+
+		// a failed init must not mark any migration as done
+		assert.ErrorIs(t, m.Migrate(), errInit)
+		assert.Equal(t, int64(0), tableCount(t, db))
+	})
+}
+
 func TestMigrationIDDoesNotExist(t *testing.T) {
 	forEachDatabase(t, func(db *xorm.Engine) {
 		m := New(db, migrations)

@@ -283,6 +283,7 @@ func (x *Xormigrate) rollbackMigration(m *Migration) error {
 		}
 	} else {
 		sess := x.db.NewSession()
+		defer sess.Close()
 		if err := m.RollbackSession(sess); err != nil {
 			rollbackSession(sess)
 			return err
@@ -299,12 +300,7 @@ func (x *Xormigrate) rollbackMigration(m *Migration) error {
 
 func (x *Xormigrate) runInitSchema() error {
 	logger.Info("Initializing Schema")
-	sess := x.db.NewSession()
 	if err := x.initSchema(x.db); err != nil {
-		rollbackSession(sess)
-		return err
-	}
-	if err := sess.Commit(); err != nil {
 		return err
 	}
 	if err := x.insertMigration(initSchemaMigrationId); err != nil {
@@ -342,6 +338,7 @@ func (x *Xormigrate) runMigration(migration *Migration) error {
 			}
 		} else {
 			sess := x.db.NewSession()
+			defer sess.Close()
 			if err := migration.MigrateSession(sess); err != nil {
 				rollbackSession(sess)
 				return fmt.Errorf("migration %s failed: %w", migration.ID, err)
