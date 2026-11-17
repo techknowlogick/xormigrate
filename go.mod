@@ -1,4 +1,4 @@
-module src.techknowlogick.com/xormigrate
+module src.techknowlogick.com/xormigrate/v2
 
 go 1.25.0
 

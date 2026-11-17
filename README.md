@@ -1,5 +1,5 @@
 # Xormigrate
-[![GoDoc](https://pkg.go.dev/badge/src.techknowlogick.com/xormigrate)](https://pkg.go.dev/src.techknowlogick.com/xormigrate)
+[![GoDoc](https://pkg.go.dev/badge/src.techknowlogick.com/xormigrate/v2)](https://pkg.go.dev/src.techknowlogick.com/xormigrate/v2)
 
 ## Supported databases
 
@@ -14,7 +14,7 @@ It supports any of the databases Xorm supports:
 ## Installing
 
 ```bash
-go get -u src.techknowlogick.com/xormigrate
+go get -u src.techknowlogick.com/xormigrate/v2
 ```
 
 ## Usage
@@ -23,9 +23,10 @@ go get -u src.techknowlogick.com/xormigrate
 package main
 
 import (
+	"context"
 	"log"
 
-	"src.techknowlogick.com/xormigrate"
+	"src.techknowlogick.com/xormigrate/v2"
 
 	"xorm.io/xorm"
 	_ "github.com/mattn/go-sqlite3"
@@ -43,7 +44,7 @@ func main() {
 			ID: "201608301400",
 			// An optional description to print out to the Xormigrate logger
 			Description: "Create the Person table",
-			Migrate: func(tx *xorm.Engine) error {
+			Migrate: func(ctx context.Context, tx *xorm.Engine) error {
 				// it's a good practice to copy the struct inside the function,
 				// so side effects are prevented if the original struct changes during the time
 				type Person struct {
@@ -51,21 +52,21 @@ func main() {
 				}
 				return tx.Sync(&Person{})
 			},
-			Rollback: func(tx *xorm.Engine) error {
+			Rollback: func(ctx context.Context, tx *xorm.Engine) error {
 				return tx.DropTables(&Person{})
 			},
 		},
 		// add age column to persons
 		{
 			ID: "201608301415",
-			Migrate: func(tx *xorm.Engine) error {
+			Migrate: func(ctx context.Context, tx *xorm.Engine) error {
 				// when table already exists, it just adds fields as columns
 				type Person struct {
 					Age int
 				}
 				return tx.Sync(&Person{})
 			},
-			Rollback: func(tx *xorm.Engine) error {
+			Rollback: func(ctx context.Context, tx *xorm.Engine) error {
 				// Note: Column dropping in sqlite is not support, and you will need to do this manually
 				_, err = tx.Exec("ALTER TABLE person DROP COLUMN age")
 				if err != nil {
@@ -77,25 +78,32 @@ func main() {
 		// add pets table
 		{
 			ID: "201608301430",
-			Migrate: func(tx *xorm.Engine) error {
+			Migrate: func(ctx context.Context, tx *xorm.Engine) error {
 				type Pet struct {
 					Name     string
 					PersonID int
 				}
 				return tx.Sync(&Pet{})
 			},
-			Rollback: func(tx *xorm.Engine) error {
+			Rollback: func(ctx context.Context, tx *xorm.Engine) error {
 				return tx.DropTables(&Pet{})
 			},
 		},
 	})
 
-	if err = m.Migrate(); err != nil {
+	if err = m.Migrate(context.Background()); err != nil {
 		log.Fatalf("Could not migrate: %v", err)
 	}
 	log.Printf("Migration did run successfully")
 }
 ```
+
+## Canceling
+
+`Migrate`, `MigrateTo` and the rollback methods take a `context.Context`.
+If it is canceled, they stop before the next migration.
+Migration functions get the context too, so a long migration can stop on its own.
+A migration that finished is always recorded, even if the context was canceled meanwhile.
 
 ## Having a separated function for initializing the schema
 
@@ -120,8 +128,8 @@ m := xormigrate.New(db, []*xormigrate.Migration{
     // your migrations here
 })
 
-m.InitSchema(func(tx *xorm.Engine) error {
-	err := tx.sync2(
+m.InitSchema(func(ctx context.Context, tx *xorm.Engine) error {
+	err := tx.Sync(
 		&Person{},
 		&Pet{},
 		// all other tables of your app
